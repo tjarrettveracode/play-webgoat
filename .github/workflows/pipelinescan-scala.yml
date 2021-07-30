@@ -30,11 +30,17 @@ jobs:
     - name: Compile for Veracode
       run: sbt 'set scalacOptions += "-g:vars"' compile package
       
+    # zip the project and move it to a staging directory
+    - name: Zip Project
+      run: zip -R project.zip '*.jar' '*.war'
+      env:
+        build-name: project.zip      
+      
     - name: Archive package
       uses: actions/upload-artifact@v2
       with:
         name: CodePackage
-        path: '**/*.[wj]ar'
+        path: project.zip
         
   pipeline-scan:
     needs: build
@@ -50,16 +56,11 @@ jobs:
         name: CodePackage
         path: /github/home
         
-    - name: Move artifact to root 
-      run: |
-        cd /github/home
-        cp target/scala-*/*.jar . # the upload process will zip up the file in this directory structure, we are moving it for pipeline scan0
-        
     #  Submit  project to pipeline scan
     - name: Pipeline Scan
       run: |
         cd /github/home
-        java -jar /opt/veracode/pipeline-scan.jar --veracode_api_id="${{secrets.VERACODE_API_ID}}" --veracode_api_key="${{secrets.VERACODE_API_KEY}}" --fail_on_severity="Very High, High" --file="*.jar" --app_id="${{secrets.VERACODE_APP_ID}}" --json_output_file="results.json"
+        java -jar /opt/veracode/pipeline-scan.jar --veracode_api_id="${{secrets.VERACODE_API_ID}}" --veracode_api_key="${{secrets.VERACODE_API_KEY}}" --fail_on_severity="Very High, High" --file="project.zip" --app_id="${{secrets.VERACODE_APP_ID}}" --json_output_file="results.json"
       continue-on-error: true
 
     - uses: actions/upload-artifact@v2
