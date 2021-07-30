@@ -49,7 +49,12 @@ jobs:
       with:
         name: CodePackage
         path: /github/home
-    
+        
+    - name: Move artifact to root 
+      run: |
+        cd /github/home
+        cp target/scala-*/*.jar . # the upload process will zip up the file in this directory structure, we are moving it for pipeline scan0
+        
     #  Submit  project to pipeline scan
     - name: Pipeline Scan
       run: |
